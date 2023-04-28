@@ -3,15 +3,20 @@ const stopBtn = document.getElementById("stop-btn");
 const recordBtn = document.getElementById("record-btn");
 const audios = document.getElementById("audios");
 
+const socket = io();
+
 const onUserAllow = async function (stream) {
-    const options = { mimeType: "audio/webm" };
-    const recordedChunks = [];
+    let recordedChunks = [];
 
-    const mediaRecorder = new MediaRecorder(stream, options);
+    const mediaRecorder = new MediaRecorder(stream);
 
-    mediaRecorder.addEventListener("dataavailable", function (e) {
-        if (e.data.size > 0) recordedChunks.push(e.data); //emit chunks
-    });
+    mediaRecorder.ondataavailable = (e) => {
+        console.log("data available");
+
+        socket.emit("audio-chunk", e.data);
+
+        recordedChunks = [];
+    };
 
     mediaRecorder.addEventListener("stop", function () {});
 
@@ -19,7 +24,7 @@ const onUserAllow = async function (stream) {
         mediaRecorder.stop();
     });
 
-    mediaRecorder.start(4000);
+    mediaRecorder.start(15000);
 };
 
 recordBtn.onclick = () => {
@@ -27,3 +32,15 @@ recordBtn.onclick = () => {
         .getUserMedia({ audio: true, video: false })
         .then(onUserAllow);
 };
+
+// const audioBlob = new Blob(recordedChunks, {
+//     type: "audio/webm;codecs=opus",
+// });
+
+// const audioUrl = URL.createObjectURL(audioBlob);
+
+// const newAudioEl = document.createElement("audio");
+// newAudioEl.controls = "controls";
+// newAudioEl.src = audioUrl;
+
+// audios.appendChild(newAudioEl);

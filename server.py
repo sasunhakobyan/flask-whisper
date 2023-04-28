@@ -3,13 +3,13 @@ import time
 from aiohttp import web
 import socketio
 
-sio = socketio.AsyncServer()
+sio = socketio.AsyncServer(buffer_size=1e-4)
 app = web.Application()
 
 sio.attach(app)
 
-pagePath = os.path.abspath(".\public\index.html")
-staticPath = os.path.abspath(".\public")
+pagePath = os.path.abspath("./public/index.html")
+staticPath = os.path.abspath("./public")
 
 async def index(request):
     with open(pagePath) as f:
@@ -19,7 +19,7 @@ async def index(request):
 def handle_audio_chunk(sid, data):
     currentTimeInMs = time.time()
 
-    with open(f".\\temp\{currentTimeInMs}.mp3", 'ab') as f:
+    with open(f"./temp/{currentTimeInMs}.mp3", 'ab') as f:
         f.write(data)
         f.close()
 
