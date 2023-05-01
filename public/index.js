@@ -1,46 +1,45 @@
-const downloadLink = document.getElementById("download");
-const stopBtn = document.getElementById("stop-btn");
-const recordBtn = document.getElementById("record-btn");
+const recordBtn = document.getElementById("recordBtn");
+const stopBtn = document.getElementById("stopBtn");
 const audios = document.getElementById("audios");
 
-const socket = io();
-
-const onUserAllow = async function (stream) {
-    let recordedChunks = [];
-
-    const mediaRecorder = new MediaRecorder(stream);
-
-    mediaRecorder.ondataavailable = (e) => {
-        console.log("data available");
-
-        socket.emit("audio-chunk", e.data);
-
-        recordedChunks = [];
-    };
-
-    mediaRecorder.addEventListener("stop", function () {});
-
-    stopBtn.addEventListener("click", function () {
-        mediaRecorder.stop();
-    });
-
-    mediaRecorder.start(15000);
-};
-
-recordBtn.onclick = () => {
+if (navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices
-        .getUserMedia({ audio: true, video: false })
-        .then(onUserAllow);
-};
+        .getUserMedia({ audio: true })
+        .then((stream) => {
+            let chunks = [];
 
-// const audioBlob = new Blob(recordedChunks, {
-//     type: "audio/webm;codecs=opus",
-// });
+            const mediaRecorder = new MediaRecorder(stream);
 
-// const audioUrl = URL.createObjectURL(audioBlob);
+            mediaRecorder.ondataavailable = (e) => {
+                chunks.push(e.data);
 
-// const newAudioEl = document.createElement("audio");
-// newAudioEl.controls = "controls";
-// newAudioEl.src = audioUrl;
+                const blob = new Blob(chunks, {
+                    type: "audio/ogg; codecs=opus",
+                });
 
-// audios.appendChild(newAudioEl);
+                chunks = [];
+
+                const audioURL = window.URL.createObjectURL(blob);
+
+                const newAudioEl = document.createElement("audio");
+                newAudioEl.controls = "controls";
+                newAudioEl.src = audioURL;
+
+                audios.appendChild(newAudioEl);
+            };
+
+            recordBtn.onclick = () => {
+                mediaRecorder.start(5000);
+                console.log("recorder started");
+            };
+
+            stopBtn.onclick = () => {
+                mediaRecorder.stop();
+            };
+        })
+        .catch((err) => {
+            console.log("The following `getUserMedia` error occured: " + err);
+        });
+} else {
+    console.log("getUserMedia not supported on your browser!");
+}

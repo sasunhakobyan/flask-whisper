@@ -19,8 +19,13 @@ async def index(request):
 def handle_audio_chunk(sid, data):
     currentTimeInMs = time.time()
 
-    with open(f"./temp/{currentTimeInMs}.mp3", 'ab') as f:
+    print(data)
+
+    with open(f"./temp/{currentTimeInMs}.webm", 'ab') as f:
         f.write(data)
+
+        # there we must call transcription
+
         f.close()
 
 app.router.add_get('/', index)
@@ -29,6 +34,3 @@ app.router.add_static('/public', staticPath)
 
 if __name__ == '__main__':
     web.run_app(app)
-
-# print(getTranscription(currentTimeInMs))
-# os.remove(f".\\temp\{currentTimeInMs}.mp3")
