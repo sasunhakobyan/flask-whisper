@@ -2,34 +2,48 @@ const recordBtn = document.getElementById("recordBtn");
 const stopBtn = document.getElementById("stopBtn");
 const audios = document.getElementById("audios");
 
+let firstMetadataBlob;
+
+const socket = io();
+
 if (navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices
         .getUserMedia({ audio: true })
         .then((stream) => {
-            let chunks = [];
+            const mediaRecorder = new MediaRecorder(stream, {});
 
-            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.onstart = () => {
+                setTimeout(() => {
+                    mediaRecorder.requestData();
+                }, 10);
+            };
 
             mediaRecorder.ondataavailable = (e) => {
-                chunks.push(e.data);
-
-                const blob = new Blob(chunks, {
-                    type: "audio/ogg; codecs=opus",
+                const blob = new Blob([e.data], {
+                    type: "audio/wav; codecs=opus",
                 });
 
-                chunks = [];
+                if (!firstMetadataBlob) {
+                    firstMetadataBlob = blob;
+                } else {
+                    const concatBlob = new Blob([firstMetadataBlob, blob], {
+                        type: "audio/wav; codecs=opus",
+                    });
 
-                const audioURL = window.URL.createObjectURL(blob);
+                    socket.emit("audio-chunk", [firstMetadataBlob, blob]);
 
-                const newAudioEl = document.createElement("audio");
-                newAudioEl.controls = "controls";
-                newAudioEl.src = audioURL;
+                    // const audioURL = window.URL.createObjectURL(concatBlob);
 
-                audios.appendChild(newAudioEl);
+                    // const newAudioEl = document.createElement("audio");
+                    // newAudioEl.controls = "controls";
+                    // newAudioEl.src = audioURL;
+
+                    // audios.appendChild(newAudioEl);
+                }
             };
 
             recordBtn.onclick = () => {
-                mediaRecorder.start(5000);
+                mediaRecorder.start(3000);
                 console.log("recorder started");
             };
 

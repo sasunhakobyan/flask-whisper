@@ -3,6 +3,7 @@ import time
 from aiohttp import web
 import socketio
 
+
 sio = socketio.AsyncServer(buffer_size=1e-4)
 app = web.Application()
 
@@ -17,9 +18,8 @@ async def index(request):
 
 @sio.on('audio-chunk')
 def handle_audio_chunk(sid, data):
-    currentTimeInMs = time.time()
-
     print(data)
+    currentTimeInMs = time.time()
 
     with open(f"./temp/{currentTimeInMs}.webm", 'ab') as f:
         f.write(data)
