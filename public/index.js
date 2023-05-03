@@ -2,58 +2,35 @@ const recordBtn = document.getElementById("recordBtn");
 const stopBtn = document.getElementById("stopBtn");
 const audios = document.getElementById("audios");
 
-let firstMetadataBlob;
-
 const socket = io();
+const timeSlice = 4000;
 
-if (navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-            const mediaRecorder = new MediaRecorder(stream, {});
+function recordAndSend(stream) {
+    const recorder = new MediaRecorder(stream);
+    let audioBuffer;
 
-            mediaRecorder.onstart = () => {
-                setTimeout(() => {
-                    mediaRecorder.requestData();
-                }, 10);
-            };
+    recorder.ondataavailable = (e) => (audioBuffer = e.data);
+    recorder.onstop = (e) => {
+        socket.emit("audio-chunk", audioBuffer);
+    };
 
-            mediaRecorder.ondataavailable = (e) => {
-                const blob = new Blob([e.data], {
-                    type: "audio/wav; codecs=opus",
-                });
+    setTimeout(() => recorder.stop(), timeSlice);
 
-                if (!firstMetadataBlob) {
-                    firstMetadataBlob = blob;
-                } else {
-                    const concatBlob = new Blob([firstMetadataBlob, blob], {
-                        type: "audio/wav; codecs=opus",
-                    });
-
-                    socket.emit("audio-chunk", [firstMetadataBlob, blob]);
-
-                    // const audioURL = window.URL.createObjectURL(concatBlob);
-
-                    // const newAudioEl = document.createElement("audio");
-                    // newAudioEl.controls = "controls";
-                    // newAudioEl.src = audioURL;
-
-                    // audios.appendChild(newAudioEl);
-                }
-            };
-
-            recordBtn.onclick = () => {
-                mediaRecorder.start(3000);
-                console.log("recorder started");
-            };
-
-            stopBtn.onclick = () => {
-                mediaRecorder.stop();
-            };
-        })
-        .catch((err) => {
-            console.log("The following `getUserMedia` error occured: " + err);
-        });
-} else {
-    console.log("getUserMedia not supported on your browser!");
+    recorder.start();
 }
+
+let micInterval;
+recordBtn.onclick = () => {
+    if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices
+            .getUserMedia({ audio: true, video: false })
+            .then((stream) => {
+                micInterval = setInterval(
+                    () => recordAndSend(stream),
+                    timeSlice
+                );
+            });
+    }
+};
+
+stopBtn.onclick = () => clearInterval(micInterval);

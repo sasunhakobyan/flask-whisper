@@ -18,13 +18,10 @@ async def index(request):
 
 @sio.on('audio-chunk')
 def handle_audio_chunk(sid, data):
-    print(data)
     currentTimeInMs = time.time()
 
     with open(f"./temp/{currentTimeInMs}.webm", 'ab') as f:
         f.write(data)
-
-        # there we must call transcription
 
         f.close()
 
